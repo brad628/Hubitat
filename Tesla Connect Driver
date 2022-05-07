@@ -20,7 +20,7 @@
  * 10/18/20 added unlock/open charge port command
  * 12/25/20 new attributes and functions for seat heater,windows etc thanks to gomce62f, Also add input to set temp scale to either F or C.
  
- * lgk new versino, not letting the car sleep, add option to disable and schedule it between certain times.
+ * lgk new version, not letting the car sleep, add option to disable and schedule it between certain times.
  * lgk add misssing parameter to sethermostatsetpoint.. note it is in farenheit so be aware of that.. in the future i can look at supporting both
  * with option to convert.
  * lgk add code to turn off debugging after 30 minutes.
@@ -33,7 +33,10 @@
  * speed is already there as was heading but not as attributes that can be queried by rules so added that as well.
  * also some more info if debugging is on
  *
- * bsr 4/15/22 - Add valet mode and tire pressures
+ * 4/15/22 bsr - Add valet mode and tire pressures values
+ *         lgk - Refine valet and tire pressures, add code to handle 0 or null coming back from tire pressures as depending on card/sw either can be returned when not driving
+ *
+ * bsr 5/6/22 - Added valet mode on/off commands, updated window attribute to string (Open/Closed)
  */
 
 metadata {
@@ -63,20 +66,24 @@ metadata {
         attribute "seat_heater_rear_right", "number"
         attribute "seat_heater_rear_center", "number"    
         attribute "sentry_mode", "string"
-        attribute "front_drivers_window" , "number"
-        attribute "front_pass_window" , "number"
-        attribute "rear_drivers_window" , "number"
-        attribute "rear_pass_window" , "number"
+        attribute "front_drivers_window" , "string"
+        attribute "front_pass_window" , "string"
+        attribute "rear_drivers_window" , "string"
+        attribute "rear_pass_window" , "string"
         attribute "current_charge_limit", "number"
         attribute "longitude", "number"
         attribute "latitude", "number"
         attribute "speed", "number"
         attribute "heading", "number"
         attribute "valet_mode", "string"
-        attribute "tire_pressure_front_left", "number"
-        attribute "tire_pressure_front_right", "number"
-        attribute "tire_pressure_rear_left", "number"
-        attribute "tire_pressure_rear_right", "number"
+        attribute "tire_pressure_front_left", "string"
+        attribute "tire_pressure_front_right", "string"
+        attribute "tire_pressure_rear_left", "string"
+        attribute "tire_pressure_rear_right", "string"
+        attribute "last_known_tire_pressure_front_left", "number"
+        attribute "last_known_tire_pressure_front_right", "number"
+        attribute "last_known_tire_pressure_rear_left", "number"
+        attribute "last_known_tire_pressure_rear_right", "number"
 
 		command "wake"
         command "setThermostatSetpoint", ["Number"]
@@ -88,6 +95,8 @@ metadata {
         command "setSeatHeaters", ["number","number"]  /** first attribute is seat number 0-5 and second attribute is heat level 0-3 e.g. 0,3 is drivers seat heat to max *  Future plan is to have this be  drop down list */ 
         command "sentryModeOn"
         command "sentryModeOff"
+        command "valetModeOn"
+        command "valetModeOff"        
         command "ventWindows"
         command "closeWindows"
         command "setChargeLimit", ["number"] /* integer percent */
@@ -222,6 +231,7 @@ private processData(data) {
         
         if (data.vehicleState) {
            if (debug) log.debug "vehicle state = $data.vehicleState"
+            def toPSI  = 14.503773773
             
         	sendEvent(name: "presence", value: data.vehicleState.presence)
             sendEvent(name: "lock", value: data.vehicleState.lock)
@@ -232,10 +242,38 @@ private processData(data) {
             sendEvent(name: "rear_drivers_window" , value: data.vehicleState.rear_drivers_window)
             sendEvent(name: "rear_pass_window" , value: data.vehicleState.rear_pass_window)
             sendEvent(name: "valet_mode", value: data.vehicleState.valet_mode)
-            sendEvent(name: "tire_pressure_front_left", value: data.vehicleState.tpms_pressure_fl)
-            sendEvent(name: "tire_pressure_front_right", value: data.vehicleState.tpms_pressure_fr)
-            sendEvent(name: "tire_pressure_rear_left", value: data.vehicleState.tpms_pressure_rl)
-            sendEvent(name: "tire_pressure_rear_right", value: data.vehicleState.tpms_pressure_rr)
+            
+            if ((data.vehicleState.tire_pressure_front_left != null) && (data.vehicleState.tire_pressure_front_left != 0 ))
+              { 
+                def thePressure = ((float)data.vehicleState.tire_pressure_front_left * toPSI).round(1)
+                sendEvent(name: "tire_pressure_front_left", value: thePressure)
+                sendEvent(name: "last_known_tire_pressure_front_left", value: thePressure)
+              }
+            else  sendEvent(name: "tire_pressure_front_left", value: "n/a")
+            
+           if ((data.vehicleState.tire_pressure_front_right != null) && (data.vehicleState.tire_pressure_front_right != 0 ))
+              {
+                def thePressure = ((float)data.vehicleState.tire_pressure_front_right * toPSI).round(1) 
+                sendEvent(name: "tire_pressure_front_right", value: thePressure)
+                sendEvent(name: "last_known_tire_pressure_front_right", value: thePressure)
+              }
+            else  sendEvent(name: "tire_pressure_front_right", value: "n/a")
+          
+            if ((data.vehicleState.tire_pressure_rear_left != null) && (data.vehicleState.tire_pressure_rear_left != 0))
+              { 
+                def thePressure = ((float)data.vehicleState.tire_pressure_rear_left * toPSI).round(1)
+                sendEvent(name: "tire_pressure_rear_left", value: thePressure)
+                sendEvent(name: "last_known_tire_pressure_rear_left", value: thePressure)
+              }
+            else sendEvent(name: "tire_pressure_rear_left", value: "n/a")
+ 
+             if ((data.vehicleState.tire_pressure_rear_right != null) && (data.vehicleState.tire_pressure_rear_right != 0))
+              {
+                def thePressure = ((float)data.vehicleState.tire_pressure_rear_right * toPSI).round(1)
+                sendEvent(name: "tire_pressure_rear_right", value: thePressure)
+                sendEvent(name: "last_known_tire_pressure_rear_right", value: thePressure)
+              }
+            else sendEvent(name: "tire_pressure_rear_right", value: "n/a")
 
         }
         
@@ -409,6 +447,18 @@ def sentryModeOff() {
     if (result) { refresh() }
 }
 
+def valetModeOn() {
+	log.debug "Executing 'Turn Valet Mode On'"
+	def result = parent.valetModeOn(this)
+    if (result) { refresh() }
+}
+
+def valetModeOff() {
+	log.debug "Executing 'Turn Valet Mode Off'"
+	def result = parent.valetModeOff(this)
+    if (result) { refresh() }
+}
+
 def ventWindows() {
 	log.debug "Executing 'Venting Windows'"
 	def result = parent.ventWindows(this)
@@ -420,7 +470,6 @@ def closeWindows() {
 	def result = parent.closeWindows(this)
     if (result) { refresh() }
 }
-
 
 private farenhietToCelcius(dF) {
 	return (dF - 32) * 5/9
