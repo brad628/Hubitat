@@ -28,6 +28,9 @@
  * lgk 10/19/21 change set temp setpoint to double precision to get around integer values being used in conversions.
  * 
  * bsr 4/15/22 - Add valet mode and tire pressures
+ * 
+ * 05/06/22 tbm - add option to update access code from an endpoint
+ *          bsr - add support for valet mode control
  */
 
 definition(
@@ -46,17 +49,38 @@ preferences {
 	page(name: "loginToTesla", title: "Tesla")
 	page(name: "selectVehicles", title: "Tesla")
 }
+//220506 tbm start
+mappings {
+    path("/setToken") {
+        action: [GET: "setEndpointToken"]
+    }
+}
+//220506 tbm end
 
 def loginToTesla() {
 	def showUninstall = email != null && password != null
 	return dynamicPage(name: "VehicleAuth", title: "Connect your Tesla", nextPage:"selectVehicles", uninstall:showUninstall) {
 		section("Token refresh options:") {
+			def previousGlobal = globalVarAccessName
 			input "email", "text", title: "Email (no longer used - enter anything!)", required: true, autoCorrect:false
 			input "password", "text", title: "Password (no longer used - enter anything!)", required: true, autoCorrect:false
             input "newAccessToken", "string", title: "Input new access token when expired?", required: false
             input "refreshAccessTokenURL", "string", title: "URL (on your server) that holds new access token as generated from python script?", required: false 
             input "notificationDevice", "capability.notification", title: "Notification device to receive info on Tesla Token Updates?", multiple: false, required: false
+//220506 tbm start
+            input "allowEndpoint", "bool", title:"Activate Endpoint for updating token", required:false, submitOnUpdate:true
 		}
+        if(allowEndpoint){
+                section("App Endpoint Information", , hideable: false, hidden: false){
+                    if(state.accessToken == null) createAccessToken()
+                    paragraph "<b>Local Server API:</b> ${getFullLocalApiServerUrl()}/setToken?teslaToken=[Tesla Token Value]&access_token=${state.accessToken}"
+                    paragraph "<b>Cloud Server Endpoint: </b>${getFullApiServerUrl()}/setToken?teslaToken=[Tesla Token Value]&access_token=${state.accessToken}"
+
+                    input "resetToken", "button", title:"Reset Endpoint Token"
+                    input "disallow","button", title:"Remove Endpoint"
+                }
+        }  
+//220506 tbm end        
 		section("To use Tesla, Hubitat encrypts and securely stores a token.") {}
 	}
 }
@@ -87,27 +111,42 @@ def getClientId () { "81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106
 def getClientSecret () { "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3" }
 def getUserAgent() { "trentacular" }
 
+//220506 tbm start
+def setEndpointToken(){
+    if(allowEndpoint) {
+    	log.debug "Resetting access token from endpoint"
+        //log.debug "${params.teslaToken}"
+        newToken = params.teslaToken   
+    
+	    state.teslaAccessToken = newToken
+        jsonText = "{\"status\": \"acknowledged\"}"
+        render contentType:'application/json', data: "$jsonText", status:200
+    }else 
+        render contentType:'application/json', data: "{\"status\": \"denied\"}", status:404
+}
+//220506 tbm end
+
 def getAccessToken() {
     
     //log.debug "in get access token"
     if (newAccessToken)
     {
         log.debug "Resetting access token"
-        state.accessToken = newAccessToken
+        state.teslaAccessToken = newAccessToken  //220506 tbm
         app.clearSetting("newAccessToken")
         notifyIfEnabled("Tesla App - Succesfully refreshed token from entry!")
           
     }
     else
     {
-         if ((!state.accessToken) && (refreshAccessTokenURL))
+         if ((!state.teslaAccessToken) && (refreshAccessTokenURL)) //220506 tbm
         {
            // log.debug "Attempting to get access token from url!"
             refreshAccessTokenfromURL()
         }    
     }
     
-	state.accessToken
+	state.teslaAccessToken //220506 tbm
 }
 
 private convertEpochSecondsToDate(epoch) {
@@ -135,12 +174,12 @@ def refreshAccessTokenfromURL() {
               {
                   log.debug "got data = $resp.data status $resp.status"
                   notifyIfEnabled("Tesla App - Succesfully refreshed token from URL")
-                  state.accessToken = resp.data.access_token
+                  state.teslaAccessToken = resp.data.access_token //220506 tbm
                   state.refreshToken = resp.data.refresh_token
               }
             else
             {
-                 state.accessToken = null
+                 state.teslaAccessToken = null //220506 tbm
                  notifyIfEnabled("Tesla App - Refresh token from URL Failed bad response!")  
             }
         }
@@ -149,7 +188,7 @@ def refreshAccessTokenfromURL() {
     catch (groovyx.net.http.HttpResponseException e) {
             	log.warn e
                 notifyIfEnabled("Tesla App - Refresh token from URL Failed ($e)!")
-                state.accessToken = null
+                state.teslaAccessToken = null //220506 tbm
                 if (e.response?.data?.status?.code == 14) {
                     state.refreshToken = null
                 }
@@ -175,12 +214,12 @@ def refreshAccessToken() {
                         refresh_token: state.refreshToken
                     ]
                 ]) { resp ->
-                    state.accessToken = resp.data.access_token
+                    state.teslaAccessToken = resp.data.access_token //220506 tbm
                     state.refreshToken = resp.data.refresh_token
                 }
             } catch (groovyx.net.http.HttpResponseException e) {
             	log.warn e
-                state.accessToken = null
+                state.teslaAccessToken = null //220506 tbm
                 if (e.response?.data?.status?.code == 14) {
                     state.refreshToken = null
                 }
@@ -189,7 +228,7 @@ def refreshAccessToken() {
 
          // login from username password deprecated lgk
         
-       /* if (!state.accessToken) {
+       /* if (!state.teslaAccessToken) { //220506 tbm
         	log.debug "Attemtping to get access token using password" 
             httpPostJson([
                 uri: serverUrl,
@@ -204,7 +243,7 @@ def refreshAccessToken() {
                 ]
             ]) { resp ->
             	log.debug "Received access token that will expire on ${convertEpochSecondsToDate(resp.data.created_at + resp.data.expires_in)}"
-                state.accessToken = resp.data.access_token
+                state.teslaAccessToken = resp.data.access_token //220506 tbm
                 state.refreshToken = resp.data.refresh_token
             }
         }
@@ -214,7 +253,7 @@ def refreshAccessToken() {
     }
 
         // above is deprecated for now get using url
-       if ((!state.accessToken) && (refreshAccessTokenURL))
+       if ((!state.teslaAccessToken) && (refreshAccessTokenURL)) //220506 tbm
         {
             log.debug "Attempting to get access token from url!"
             refreshAccessTokenfromURL()
@@ -299,6 +338,7 @@ def updated() {
 
 def uninstalled() {
     removeChildDevices(getChildDevices())
+	removeAllInUseGlobalVar() //tbm 220504
 }
 
 private removeChildDevices(delete) {
@@ -449,7 +489,7 @@ def unlock(child) {
 	return executeApiCommand(child, "door_unlock")
 }
 
-def unlockandOpenChargePort(child) {
+def unlockAndOpenChargePort(child) {
     wake(child)
     pause(2000)
 return executeApiCommand(child, "charge_port_door_open")
@@ -519,6 +559,18 @@ def sentryModeOff(child) {
 	return executeApiCommand(child, "set_sentry_mode", body: [on: "false"])
 }
 
+def valetModeOn(child) {
+    wake(child)
+    pause(2000)
+	return executeApiCommand(child, "set_valet_mode", body: [on: "true"])
+}
+
+def valetModeOff(child) {
+    wake(child)
+    pause(2000)
+	return executeApiCommand(child, "set_valet_mode", body: [on: "false"])
+}
+
 def ventWindows(child) {
     wake(child)
     pause(2000)
@@ -544,3 +596,19 @@ def notifyIfEnabled(message) {
     }
 }
 
+//220506 tbm start
+void appButtonHandler(btn) {
+    switch(btn) {
+          case "resetToken":
+              createAccessToken()
+              break
+          case "disallow":
+              app.updateSetting("allowEndpoint",[value:"false",type:"bool"])
+              createAccessToken() //resetting this revokes all previous
+              break
+          default: 
+              if(debugEnabled) log.error "Undefined button $btn pushed"
+              break
+      }
+}
+//220506 tbm end
