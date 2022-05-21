@@ -478,115 +478,259 @@ private executeApiCommand(Map options = [:], child, String command) {
 }
 
 def lock(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "door_lock")
 }
 
 def unlock(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "door_unlock")
 }
 
-def unlockAndOpenChargePort(child) {
-    wake(child)
-    pause(2000)
-return executeApiCommand(child, "charge_port_door_open")
+def openChargePort(child) {
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
+   return executeApiCommand(child, "charge_port_door_open")
 }
 
 def climateAuto(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "auto_conditioning_start")
 }
 
 def climateOff(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "auto_conditioning_stop")
 }
 
 def setThermostatSetpointC(child, Number setpoint) {
 	def Double setpointCelcius = setpoint.toDouble()
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
     return executeApiCommand(child, "set_temps", body: [driver_temp: setpointCelcius, passenger_temp: setpointCelcius])
 }
 
 
 def setThermostatSetpointF(child, Number setpoint) {
 	def Double setpointCelcius = farenhietToCelcius(setpoint).toDouble()
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
     log.debug "setting tesla temp to $setpointCelcius input = $setpoint"
     return executeApiCommand(child, "set_temps", body: [driver_temp: setpointCelcius, passenger_temp: setpointCelcius])
 }
 
 def startCharge(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "charge_start")
 }
 
 def stopCharge(child) {
-   wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "charge_stop")
 }
 
 def openTrunk(child, whichTrunk) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "actuate_trunk", body: [which_trunk: whichTrunk])
 }
 
 def setSeatHeaters(child, seat,level) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "remote_seat_heater_request", body: [heater: seat, level: level])
 }
 
 def sentryModeOn(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "set_sentry_mode", body: [on: "true"])
 }
 
 def sentryModeOff(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "set_sentry_mode", body: [on: "false"])
 }
 
 def valetModeOn(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "set_valet_mode", body: [on: "true"])
 }
 
 def valetModeOff(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "set_valet_mode", body: [on: "false"])
 }
 
 def ventWindows(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "window_control", body: [command: "vent"])
 }
 
 def closeWindows(child) {
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
 	return executeApiCommand(child, "window_control", body: [command: "close"])
 }
 
 def setChargeLimit(child,limit) {
     def limitPercent = limit.toInteger()
-    wake(child)
-    pause(2000)
+    def data = [:]
+	def id = child.device.deviceNetworkId
+    authorizedHttpRequest("/api/1/vehicles/${id}", "GET", { resp ->
+        data = transformVehicleResponse(resp)
+    })
+    if (data.state == "online") {
+       pause(2000)}
+    else {
+        wake(child)
+        pause(30000)}
     return executeApiCommand(child,"set_charge_limit", body: [percent: limitPercent])
 }
 
