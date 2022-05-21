@@ -31,6 +31,8 @@
  * 
  * 05/06/22 tbm - add option to update access code from an endpoint
  *          bsr - add support for valet mode control
+ *
+ * bsr 05/20/22 - Add if condition to commands to check for online state and wake only if not online (+extra delay to allow wake)
  */
 
 definition(
