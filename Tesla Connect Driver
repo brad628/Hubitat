@@ -323,7 +323,7 @@ private processData(data) {
 }
 
 def refresh() {
-	if (descLog) log.info "Executing 'refresh'"
+	if (debug) log.debug "Executing 'refresh'" // Changed to debug log to reduce logging of every refresh
     def now = new Date().format('MM/dd/yyyy h:mm a',location.timeZone)
     sendEvent(name: "lastUpdate", value: now, descriptionText: "Last Update: $now")
    
