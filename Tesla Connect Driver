@@ -35,14 +35,10 @@
  *
  * bsr 4/15/22 - Add valet mode and tire pressures
  * new version fix misspelling of tpms vs tmps and notice tire pressures were in bar so convert to psi
- * yet another change for tire pressure the descirption of the fields that you had were wrong see below.
- * dev:12122022-04-17 02:01:10.554 pm debugprocessData: [state:online, motion:active, speed:29, vin:5YJ3E1EB9JF117593, thermostatMode:auto, 
- * vehicleState:[presence:not present, lock:locked, odometer:32665.353397, sentry_mode:Off, front_drivers_window:Closed, front_pass_window:Closed, rear_drivers_window:Closed, rear_pass_window:Closed, 
- * valet_mode:Off, tire_pressure_front_left:3.2, tire_pressure_front_right:3.2, tire_pressure_rear_left:3.175, tire_pressure_rear_right:3.15], 
- *
  * add code to handle 0 or null coming back from tire pressures as depending on card/sw either can be returned when not driving
  * add valet mode.
  * v 3.0 released changed method from pause to pauseExecution as pause is only in the apps .. weird.
+ * bsr 7/18/22 - Removed duplicate sendEvents for latitude and longitude. Causing duplicate triggers in Rule machine apps
  */
 
 metadata {
@@ -224,7 +220,7 @@ private processData(data) {
         if (data.chargeState) {
             if (debug) log.debug "chargeState = $data.chargeState"
             
-        	sendEvent(name: "battery", value: data.chargeState.battery)
+	    sendEvent(name: "battery", value: data.chargeState.battery)
             sendEvent(name: "batteryRange", value: data.chargeState.batteryRange.toInteger())
             sendEvent(name: "chargingState", value: data.chargeState.chargingState)
             sendEvent(name: "minutes_to_full_charge", value: data.chargeState.minutes_to_full_charge)
@@ -235,21 +231,19 @@ private processData(data) {
         if (data.driveState) {
             if (debug) log.debug "DriveState = $data.driveState"
             
-        	sendEvent(name: "latitude", value: data.driveState.latitude)
-			sendEvent(name: "longitude", value: data.driveState.longitude)
+	    sendEvent(name: "latitude", value: data.driveState.latitude)
+	    sendEvent(name: "longitude", value: data.driveState.longitude)
             sendEvent(name: "method", value: data.driveState.method)
             sendEvent(name: "heading", value: data.driveState.heading)
             sendEvent(name: "lastUpdateTime", value: data.driveState.lastUpdateTime)
-            sendEvent(name: "longitude", value: data.driveState.longitude)
-            sendEvent(name: "latitude", value: data.driveState.latitude)
             //sendEvent(name: "speed", value: data.driveState.speed)
         }
         
         if (data.vehicleState) {
-           if (debug) log.debug "vehicle state = $data.vehicleState"
+            if (debug) log.debug "vehicle state = $data.vehicleState"
             def toPSI  = 14.503773773
             
-        	sendEvent(name: "presence", value: data.vehicleState.presence)
+	    sendEvent(name: "presence", value: data.vehicleState.presence)
             sendEvent(name: "lock", value: data.vehicleState.lock)
             sendEvent(name: "odometer", value: data.vehicleState.odometer.toInteger())
             sendEvent(name: "sentry_mode", value: data.vehicleState.sentry_mode)
