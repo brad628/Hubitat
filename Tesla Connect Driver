@@ -220,7 +220,7 @@ private processData(data) {
         if (data.chargeState) {
             if (debug) log.debug "chargeState = $data.chargeState"
             
-	    sendEvent(name: "battery", value: data.chargeState.battery)
+        	sendEvent(name: "battery", value: data.chargeState.battery)
             sendEvent(name: "batteryRange", value: data.chargeState.batteryRange.toInteger())
             sendEvent(name: "chargingState", value: data.chargeState.chargingState)
             sendEvent(name: "minutes_to_full_charge", value: data.chargeState.minutes_to_full_charge)
@@ -231,8 +231,8 @@ private processData(data) {
         if (data.driveState) {
             if (debug) log.debug "DriveState = $data.driveState"
             
-	    sendEvent(name: "latitude", value: data.driveState.latitude)
-	    sendEvent(name: "longitude", value: data.driveState.longitude)
+        	sendEvent(name: "latitude", value: data.driveState.latitude)
+			sendEvent(name: "longitude", value: data.driveState.longitude)
             sendEvent(name: "method", value: data.driveState.method)
             sendEvent(name: "heading", value: data.driveState.heading)
             sendEvent(name: "lastUpdateTime", value: data.driveState.lastUpdateTime)
@@ -240,10 +240,10 @@ private processData(data) {
         }
         
         if (data.vehicleState) {
-            if (debug) log.debug "vehicle state = $data.vehicleState"
+           if (debug) log.debug "vehicle state = $data.vehicleState"
             def toPSI  = 14.503773773
             
-	    sendEvent(name: "presence", value: data.vehicleState.presence)
+        	sendEvent(name: "presence", value: data.vehicleState.presence)
             sendEvent(name: "lock", value: data.vehicleState.lock)
             sendEvent(name: "odometer", value: data.vehicleState.odometer.toInteger())
             sendEvent(name: "sentry_mode", value: data.vehicleState.sentry_mode)
